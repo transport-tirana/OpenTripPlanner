@@ -26,6 +26,9 @@ public abstract class StationElementBuilder<
   private StopLevel level;
   private Station parentStation;
 
+  private boolean litAtNight;
+  private boolean shelter;
+
   StationElementBuilder(FeedScopedId id) {
     super(id);
   }
@@ -39,6 +42,8 @@ public abstract class StationElementBuilder<
     this.wheelchairAccessibility = original.getWheelchairAccessibility();
     this.level = original.level();
     this.parentStation = original.getParentStation();
+    this.litAtNight = original.isLitAtNight();
+    this.shelter = original.isShelter();
   }
 
   abstract B instance();
@@ -108,6 +113,24 @@ public abstract class StationElementBuilder<
 
   public B withParentStation(Station parentStation) {
     this.parentStation = parentStation;
+    return instance();
+  }
+
+  public boolean litAtNight() {
+    return litAtNight;
+  }
+
+  public B withLitAtNight(boolean litAtNight) {
+    this.litAtNight = litAtNight;
+    return instance();
+  }
+
+  public boolean shelter() {
+    return shelter;
+  }
+
+  public B withShelter(boolean shelter) {
+    this.shelter = shelter;
     return instance();
   }
 }

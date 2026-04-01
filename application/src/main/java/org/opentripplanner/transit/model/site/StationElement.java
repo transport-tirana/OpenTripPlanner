@@ -32,6 +32,10 @@ public abstract class StationElement<
 
   private final Station parentStation;
 
+  private final boolean litAtNight;
+
+  private final boolean shelter;
+
   StationElement(B builder) {
     super(builder.getId());
     // Required fields
@@ -47,6 +51,8 @@ public abstract class StationElement<
     this.description = builder.description();
     this.level = builder.level();
     this.parentStation = builder.parentStation();
+    this.litAtNight = builder.litAtNight();
+    this.shelter = builder.shelter();
   }
 
   /**
@@ -103,6 +109,16 @@ public abstract class StationElement<
     return wheelchairAccessibility;
   }
 
+  /** Returns whether the station is lit at night, optional custom field (TIR) */
+  public boolean isLitAtNight() {
+    return litAtNight;
+  }
+
+  /** Returns whether the station has a shelter, optional custom field (TIR) */
+  public boolean isShelter() {
+    return shelter;
+  }
+
   /** Level name for elevator descriptions */
   @Nullable
   public StopLevel level() {
@@ -153,7 +169,9 @@ public abstract class StationElement<
       Objects.equals(coordinate, other.getCoordinate()) &&
       Objects.equals(wheelchairAccessibility, other.getWheelchairAccessibility()) &&
       Objects.equals(level, other.level()) &&
-      Objects.equals(parentStation, other.getParentStation())
+      Objects.equals(parentStation, other.getParentStation()) &&
+      Objects.equals(litAtNight, other.isLitAtNight()) &&
+      Objects.equals(shelter, other.isShelter())
     );
   }
 }
