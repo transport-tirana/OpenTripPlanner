@@ -5,6 +5,7 @@ import java.util.Objects;
 import javax.annotation.Nullable;
 import org.opentripplanner.routing.api.request.RouteRequest;
 import org.opentripplanner.routing.api.request.preference.AccessibilityPreferences;
+import org.opentripplanner.routing.api.request.preference.TirStopSafetyPreferences;
 import org.opentripplanner.utils.tostring.ToStringBuilder;
 
 /**
@@ -26,6 +27,7 @@ public class GeneralizedCostParameters {
   private final double waitReluctanceFactor;
   private final boolean wheelchairEnabled;
   private final AccessibilityPreferences wheelchairAccessibility;
+  private final TirStopSafetyPreferences tirStopSafetyPreferences;
   private final BitSet unpreferredPatterns;
   private final RaptorCostLinearFunction unpreferredCost;
 
@@ -41,6 +43,7 @@ public class GeneralizedCostParameters {
     this.waitReluctanceFactor = 1.0;
     this.wheelchairEnabled = false;
     this.wheelchairAccessibility = AccessibilityPreferences.ofOnlyAccessible();
+    this.tirStopSafetyPreferences = TirStopSafetyPreferences.ofOnlyAccessible();
     this.unpreferredPatterns = new BitSet();
     this.unpreferredCost = UNPREFERRED_COST;
   }
@@ -52,6 +55,7 @@ public class GeneralizedCostParameters {
     this.waitReluctanceFactor = builder.waitReluctanceFactor();
     this.wheelchairEnabled = builder.wheelchairEnabled();
     this.wheelchairAccessibility = builder.wheelchairAccessibility();
+    this.tirStopSafetyPreferences = builder.stopSafetyPreferences();
     this.unpreferredPatterns = Objects.requireNonNull(builder.unpreferredPatterns());
     this.unpreferredCost = Objects.requireNonNull(builder.unpreferredCost());
   }
@@ -93,6 +97,10 @@ public class GeneralizedCostParameters {
 
   public AccessibilityPreferences wheelchairAccessibility() {
     return wheelchairAccessibility;
+  }
+
+  public TirStopSafetyPreferences stopSafetyPreferences() {
+    return tirStopSafetyPreferences;
   }
 
   public BitSet unpreferredPatterns() {

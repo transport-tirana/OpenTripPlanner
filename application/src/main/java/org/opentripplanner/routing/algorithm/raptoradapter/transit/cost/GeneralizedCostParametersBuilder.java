@@ -3,6 +3,7 @@ package org.opentripplanner.routing.algorithm.raptoradapter.transit.cost;
 import java.util.BitSet;
 import org.opentripplanner.routing.api.request.framework.CostLinearFunction;
 import org.opentripplanner.routing.api.request.preference.AccessibilityPreferences;
+import org.opentripplanner.routing.api.request.preference.TirStopSafetyPreferences;
 
 /**
  * Mutable version of the {@link GeneralizedCostParameters}.
@@ -16,6 +17,7 @@ public class GeneralizedCostParametersBuilder {
   private double waitReluctanceFactor;
   private boolean wheelchairEnabled;
   private AccessibilityPreferences wheelchairAccessibility;
+  private TirStopSafetyPreferences stopSafetyPreferences;
   private BitSet unpreferredPatterns;
   private RaptorCostLinearFunction unpreferredCost;
 
@@ -26,6 +28,7 @@ public class GeneralizedCostParametersBuilder {
     this.waitReluctanceFactor = other.waitReluctanceFactor();
     this.wheelchairEnabled = other.wheelchairEnabled();
     this.wheelchairAccessibility = other.wheelchairAccessibility();
+    this.stopSafetyPreferences = other.stopSafetyPreferences();
     this.unpreferredPatterns = other.unpreferredPatterns();
     this.unpreferredCost = other.unnpreferredCost();
   }
@@ -85,6 +88,17 @@ public class GeneralizedCostParametersBuilder {
     AccessibilityPreferences wheelchairAccessibility
   ) {
     this.wheelchairAccessibility = wheelchairAccessibility;
+    return this;
+  }
+
+  public TirStopSafetyPreferences stopSafetyPreferences() {
+    return stopSafetyPreferences;
+  }
+
+  public GeneralizedCostParametersBuilder stopSafetyPreferences(
+    TirStopSafetyPreferences stopSafetyPreferences
+  ) {
+    this.stopSafetyPreferences = stopSafetyPreferences;
     return this;
   }
 
