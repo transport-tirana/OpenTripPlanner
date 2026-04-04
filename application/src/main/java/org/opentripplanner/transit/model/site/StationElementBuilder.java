@@ -26,8 +26,8 @@ public abstract class StationElementBuilder<
   private StopLevel level;
   private Station parentStation;
 
-  private boolean litAtNight;
-  private boolean shelter;
+  private int litAtNight;
+  private int shelter;
 
   StationElementBuilder(FeedScopedId id) {
     super(id);
@@ -116,20 +116,20 @@ public abstract class StationElementBuilder<
     return instance();
   }
 
-  public boolean litAtNight() {
+  public int litAtNight() {
     return litAtNight;
   }
 
-  public B withLitAtNight(boolean litAtNight) {
+  public B withLitAtNight(int litAtNight) {
     this.litAtNight = litAtNight;
     return instance();
   }
 
-  public boolean shelter() {
+  public int shelter() {
     return shelter;
   }
 
-  public B withShelter(boolean shelter) {
+  public B withShelter(int shelter) {
     this.shelter = shelter;
     return instance();
   }

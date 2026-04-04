@@ -60,8 +60,8 @@ class StopMapper {
       .withPlatformCode(gtfsStop.getPlatformCode())
       .withVehicleType(mode)
       .withSometimesUsedRealtime(mapSometimesUsedRealtime(mode, gtfsStop))
-      .withLitAtNight(gtfsStop.isLitAtNight())
-      .withShelter(gtfsStop.isShelter());
+      .withLitAtNight(gtfsStop.getLitAtNight())
+      .withShelter(gtfsStop.getShelter());
 
     builder.withName(
       translationHelper.getTranslation(

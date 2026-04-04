@@ -32,9 +32,9 @@ public abstract class StationElement<
 
   private final Station parentStation;
 
-  private final boolean litAtNight;
+  private final int litAtNight;
 
-  private final boolean shelter;
+  private final int shelter;
 
   StationElement(B builder) {
     super(builder.getId());
@@ -110,12 +110,12 @@ public abstract class StationElement<
   }
 
   /** Returns whether the station is lit at night, optional custom field (TIR) */
-  public boolean isLitAtNight() {
+  public int getLitAtNight() {
     return litAtNight;
   }
 
   /** Returns whether the station has a shelter, optional custom field (TIR) */
-  public boolean isShelter() {
+  public int getShelter() {
     return shelter;
   }
 
