@@ -7,7 +7,6 @@ import static org.opentripplanner.osm.model.TraverseDirection.DIRECTIONLESS;
 import static org.opentripplanner.osm.model.TraverseDirection.FORWARD;
 
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import gnu.trove.iterator.TLongIterator;
 import java.util.ArrayList;
@@ -28,7 +27,6 @@ import org.opentripplanner.graph_builder.module.osm.edgelevelinfo.DefaultIncline
 import org.opentripplanner.graph_builder.module.osm.edgelevelinfo.NoopInclinedEdgeLevelInfoProcessor;
 import org.opentripplanner.graph_builder.module.osm.parameters.OsmProcessingParameters;
 import org.opentripplanner.osm.OsmProvider;
-import org.opentripplanner.osm.model.OsmEntity;
 import org.opentripplanner.osm.model.OsmLevel;
 import org.opentripplanner.osm.model.OsmNode;
 import org.opentripplanner.osm.model.OsmWay;
@@ -126,7 +124,7 @@ public class OsmModule implements GraphBuilderModule {
       osmdb,
       graph,
       params.boardingAreaRefTags(),
-      params.includeOsmSubwayEntrances(),
+      params.includeOsmStationEntrances(),
       issueStore
     );
     for (var provider : providers) {
@@ -179,14 +177,6 @@ public class OsmModule implements GraphBuilderModule {
         false
       );
       parkingLots.addAll(bikeParkingNodes);
-    }
-
-    for (OsmArea area : Iterables.concat(
-      osmdb.getWalkableAreas(),
-      osmdb.getParkAndRideAreas(),
-      osmdb.getBikeParkingAreas()
-    )) {
-      setEntityName(area.parent);
     }
 
     // figure out which nodes that are actually intersections
@@ -335,7 +325,6 @@ public class OsmModule implements GraphBuilderModule {
 
     WAY: for (OsmWay way : osmdb.getWays()) {
       WayPropertiesPair wayData = way.getOsmProvider().getWayPropertySet().getDataForWay(way);
-      setEntityName(way);
 
       var forwardPermission = wayData.forward().getPermission();
       var backwardPermission = wayData.backward().getPermission();
@@ -433,6 +422,7 @@ public class OsmModule implements GraphBuilderModule {
           osmEndNode.hasTag("ele") ||
           osmEndNode.isBoardingLocation() ||
           osmEndNode.isBarrier() ||
+          osmEndNode.isEntrance() ||
           vertexGenerator.nodesInBarrierWays().containsKey(osmEndNode)
         ) {
           segmentCoordinates.add(osmEndNode.getCoordinate());
@@ -591,15 +581,6 @@ public class OsmModule implements GraphBuilderModule {
   private void validateBarriers() {
     List<BarrierVertex> vertices = graph.getVerticesOfType(BarrierVertex.class);
     vertices.forEach(bv -> bv.makeBarrierAtEndReachable());
-  }
-
-  private void setEntityName(OsmEntity entity) {
-    if (!entity.hasTag("name")) {
-      I18NString creativeName = entity.getOsmProvider().getWayPropertySet().getCreativeName(entity);
-      if (creativeName != null) {
-        entity.setCreativeName(creativeName);
-      }
-    }
   }
 
   private void applyEdgesToTurnRestrictions(

@@ -11,6 +11,7 @@ import static org.opentripplanner.street.model.StreetTraversalPermission.PEDESTR
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -144,8 +145,9 @@ public abstract class OsmEntity {
     "bicycle",
     "vehicle"
   );
-  public static final Set<String> NO_ACCESS_TAGS = Set.of("no", "license", "dismount");
-  public static final Map<StreetTraversalPermission, String> OSM_TAGS_FOR_TRAVERSAL_PERMISSION =
+  private static final Set<String> WALK_ONLY_HIGHWAYS = Set.of("footway", "step", "corridor");
+  private static final Set<String> NO_ACCESS_TAGS = Set.of("no", "license", "dismount");
+  private static final Map<StreetTraversalPermission, String> OSM_TAGS_FOR_TRAVERSAL_PERMISSION =
     Map.of(
       StreetTraversalPermission.CAR,
       "motorcar",
@@ -155,14 +157,31 @@ public abstract class OsmEntity {
       "foot"
     );
 
-  /* To save memory this is only created when an entity actually has tags. */
-  private Map<String, String> tags;
+  private final Map<String, String> tags;
 
-  protected long id;
+  protected final long id;
 
-  protected I18NString creativeName;
+  private final OsmProvider osmProvider;
 
-  private OsmProvider osmProvider;
+  /**
+   * Because it is expensive to compute the creative way, we do it only once and store the fact in
+   * this boolean.
+   */
+  private boolean creativeNameComputed = false;
+
+  @Nullable
+  private I18NString creativeName;
+
+  /**
+   * Constructor for immutable OsmEntity
+   */
+  protected OsmEntity(long id, Map<String, String> tags, OsmProvider osmProvider) {
+    this.id = id;
+    // calling Map.copyOf here costs about 10% of parsing performance, so we use
+    // Collections.unmodifiableMap in the getter
+    this.tags = tags;
+    this.osmProvider = osmProvider;
+  }
 
   public static boolean isFalse(String tagValue) {
     return ("no".equals(tagValue) || "0".equals(tagValue) || "false".equals(tagValue));
@@ -180,63 +199,23 @@ public abstract class OsmEntity {
   }
 
   /**
-   * Sets the id.
-   */
-  public void setId(long id) {
-    this.id = id;
-  }
-
-  /**
-   * Adds a tag.
-   */
-  public void addTag(OsmTag tag) {
-    if (tags == null) {
-      tags = new HashMap<>();
-    }
-
-    tags.put(tag.getK().toLowerCase(), tag.getV());
-  }
-
-  /**
-   * Adds a tag.
-   */
-  public OsmEntity addTag(String key, String value) {
-    if (key == null || value == null) {
-      return this;
-    }
-
-    if (tags == null) {
-      tags = new HashMap<>();
-    }
-
-    tags.put(key.toLowerCase(), value);
-    return this;
-  }
-
-  /**
-   * The tags of an entity.
+   * The tags of an entity (immutable).
    */
   public Map<String, String> getTags() {
-    return Objects.requireNonNullElse(tags, Map.of());
+    return Collections.unmodifiableMap(tags);
   }
 
   /**
    * Is the tag defined?
    */
   public boolean hasTag(String tag) {
-    tag = tag.toLowerCase();
-    return tags != null && tags.containsKey(tag);
+    return getTag(tag) != null;
   }
 
   /**
    * Determines if a tag contains a false value. 'no', 'false', and '0' are considered false.
    */
   public boolean isTagFalse(String tag) {
-    tag = tag.toLowerCase();
-    if (tags == null) {
-      return false;
-    }
-
     return isFalse(getTag(tag));
   }
 
@@ -257,11 +236,6 @@ public abstract class OsmEntity {
    * Determines if a tag contains a true value. 'yes', 'true', and '1' are considered true.
    */
   public boolean isTagTrue(String tag) {
-    tag = tag.toLowerCase();
-    if (tags == null) {
-      return false;
-    }
-
     return isTrue(getTag(tag));
   }
 
@@ -318,13 +292,9 @@ public abstract class OsmEntity {
   }
 
   protected boolean isExplicitlyAllowed(String key) {
-    if (tags == null) {
-      return false;
-    }
     if (isTagTrue(key)) {
       return true;
     }
-    key = key.toLowerCase();
     String value = getTag(key);
     return (
       "designated".equals(value) ||
@@ -341,10 +311,7 @@ public abstract class OsmEntity {
   @Nullable
   public String getTag(String tag) {
     tag = tag.toLowerCase();
-    if (tags != null && tags.containsKey(tag)) {
-      return tags.get(tag);
-    }
-    return null;
+    return tags.get(tag);
   }
 
   /**
@@ -504,19 +471,19 @@ public abstract class OsmEntity {
    * Checks if a tag contains the specified value.
    */
   public boolean isTag(String tag, String value) {
-    tag = tag.toLowerCase();
-    if (tags != null && tags.containsKey(tag) && value != null) {
-      return value.equals(tags.get(tag));
-    }
-
-    return false;
+    return value != null && value.equals(tags.get(tag.toLowerCase()));
   }
 
   /**
    * Takes a tag key and checks if the value is any of those in {@code oneOfTags}.
    */
   public boolean isOneOfTags(String key, Set<String> oneOfTags) {
-    return oneOfTags.stream().anyMatch(value -> isTag(key, value));
+    var value = getTag(key);
+    if (value == null) {
+      return false;
+    } else {
+      return oneOfTags.contains(value);
+    }
   }
 
   /**
@@ -525,23 +492,19 @@ public abstract class OsmEntity {
    */
   @Nullable
   public I18NString getAssumedName() {
-    if (tags == null) {
-      return null;
-    }
     if (tags.containsKey("name")) {
       return TranslatedString.getDeduplicatedI18NString(
         this.generateI18NForPattern("{name}"),
         false
       );
     }
-    if (tags.containsKey("otp:route_name")) {
-      return new NonLocalizedString(tags.get("otp:route_name"));
+    // because it is expensive to compute the creative way, we do it only once.
+    if (!creativeNameComputed) {
+      this.creativeName = getOsmProvider().getWayPropertySet().getCreativeName(this);
+      this.creativeNameComputed = true;
     }
-    if (this.creativeName != null) {
+    if (creativeName != null) {
       return this.creativeName;
-    }
-    if (tags.containsKey("otp:route_ref")) {
-      return new NonLocalizedString(tags.get("otp:route_ref"));
     }
     if (tags.containsKey("ref")) {
       return new NonLocalizedString(tags.get("ref"));
@@ -658,7 +621,7 @@ public abstract class OsmEntity {
       return Optional.empty();
     }
 
-    if ("foot".equals(mode) && !isOneOfTags("highway", Set.of("footway", "step", "corridor"))) {
+    if ("foot".equals(mode) && !isOneOfTags("highway", WALK_ONLY_HIGHWAYS)) {
       return Optional.empty();
     }
 
@@ -770,30 +733,12 @@ public abstract class OsmEntity {
   }
 
   /**
-   * @return True if this entity provides an entrance to a platform or similar entity
-   */
-  public boolean isEntrance() {
-    return (
-      (isTag("railway", "subway_entrance") ||
-        isTag("highway", "elevator") ||
-        isTag("entrance", "yes") ||
-        isTag("entrance", "main")) &&
-      !isTag("access", "private") &&
-      !isTag("access", "no")
-    );
-  }
-
-  /**
    * @return True if this node / area is a bike parking.
    */
   public boolean isBikeParking() {
     return (
       isTag("amenity", "bicycle_parking") && !isTag("access", "private") && !isTag("access", "no")
     );
-  }
-
-  public void setCreativeName(I18NString creativeName) {
-    this.creativeName = creativeName;
   }
 
   /**
@@ -842,10 +787,6 @@ public abstract class OsmEntity {
 
   public OsmProvider getOsmProvider() {
     return osmProvider;
-  }
-
-  public void setOsmProvider(OsmProvider provider) {
-    this.osmProvider = provider;
   }
 
   /**
@@ -940,7 +881,7 @@ public abstract class OsmEntity {
    * set on the entity in OSM.
    *
    * @see OsmEntity#isNamed()
-   * @see https://wiki.openstreetmap.org/wiki/Tag:noname%3Dyes
+   * @link https://wiki.openstreetmap.org/wiki/Tag:noname%3Dyes
    */
   public boolean isExplicitlyUnnamed() {
     return isTagTrue("noname");

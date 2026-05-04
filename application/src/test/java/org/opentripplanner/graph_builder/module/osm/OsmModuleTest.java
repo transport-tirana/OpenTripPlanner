@@ -163,10 +163,11 @@ public class OsmModuleTest {
 
   @Test
   public void testCreativeNaming() {
-    OsmEntity way = new OsmWay();
-    way.addTag("highway", "footway");
-    way.addTag("cycleway", "lane");
-    way.addTag("access", "no");
+    OsmEntity way = OsmWay.of()
+      .withTag("highway", "footway")
+      .withTag("cycleway", "lane")
+      .withTag("access", "no")
+      .build();
 
     CreativeNamer namer = new CreativeNamer(
       "Highway with cycleway {cycleway} and access {access} and morx {morx}"
@@ -277,7 +278,7 @@ public class OsmModuleTest {
     Vertex bottomV = graph.getVertex(VertexLabel.osm(580290955));
     Vertex topV = graph.getVertex(VertexLabel.osm(559271124));
 
-    GraphPathFinder graphPathFinder = new GraphPathFinder(null);
+    GraphPathFinder graphPathFinder = new GraphPathFinder();
     var pathList = graphPathFinder.graphPathFinderEntryPoint(
       request,
       Set.of(bottomV),
