@@ -30,6 +30,11 @@ public class CostCalculatorFactory {
       );
     }
 
+    calculator = new TirShelterLightingCostCalculator<>(
+      calculator,
+      generalizedCostParameters.stopSafetyPreferences()
+    );
+
     return calculator;
   }
 }
