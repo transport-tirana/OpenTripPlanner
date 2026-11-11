@@ -33,6 +33,10 @@ public abstract class StationElement<
 
   private final Station parentStation;
 
+  private final int litAtNight;
+
+  private final int shelter;
+
   StationElement(B builder) {
     super(builder.getId());
     // Required fields
@@ -48,6 +52,8 @@ public abstract class StationElement<
     this.description = builder.description();
     this.level = builder.level();
     this.parentStation = builder.parentStation();
+    this.litAtNight = builder.litAtNight();
+    this.shelter = builder.shelter();
   }
 
   public List<FeedScopedId> getIdAndParentStationId() {
@@ -137,6 +143,16 @@ public abstract class StationElement<
     return parentStation != null;
   }
 
+  /** TIR: Whether this station is lit at night - 1 if lit, 0 if not */
+  public int getLitAtNight() {
+    return litAtNight;
+  }
+
+  /** TIR: Whether this station has a shelter - 1 if so, 0 if not */
+  public int getShelter() {
+    return shelter;
+  }
+
   /**
    * Return {@code true} if this stop (element) has the same parent station as the other stop
    * (element).
@@ -158,7 +174,9 @@ public abstract class StationElement<
       Objects.equals(coordinate, other.getCoordinate()) &&
       Objects.equals(wheelchairAccessibility, other.getWheelchairAccessibility()) &&
       Objects.equals(level, other.level()) &&
-      Objects.equals(parentStation, other.getParentStation())
+      Objects.equals(parentStation, other.getParentStation()) &&
+      Objects.equals(litAtNight, other.getLitAtNight()) &&
+      Objects.equals(shelter, other.getShelter())
     );
   }
 }
