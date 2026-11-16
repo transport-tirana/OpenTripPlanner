@@ -2,6 +2,7 @@ package org.opentripplanner.standalone.config.routerequest;
 
 import static org.opentripplanner.standalone.config.framework.json.OtpVersion.V2_0;
 import static org.opentripplanner.standalone.config.framework.json.OtpVersion.V2_1;
+import static org.opentripplanner.standalone.config.framework.json.OtpVersion.V2_11;
 import static org.opentripplanner.standalone.config.framework.json.OtpVersion.V2_2;
 import static org.opentripplanner.standalone.config.framework.json.OtpVersion.V2_4;
 import static org.opentripplanner.standalone.config.framework.json.OtpVersion.V2_5;
@@ -16,6 +17,8 @@ import static org.opentripplanner.standalone.config.routerequest.VehicleWalkingC
 import static org.opentripplanner.standalone.config.routerequest.WheelchairConfig.mapWheelchairPreferences;
 
 import java.time.Duration;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.stream.Collectors;
 import org.opentripplanner.api.parameter.QualifiedModeSet;
 import org.opentripplanner.core.model.basic.CostLinearFunction;
@@ -30,6 +33,7 @@ import org.opentripplanner.routing.api.request.preference.RoutingPreferencesBuil
 import org.opentripplanner.routing.api.request.preference.ScooterPreferences;
 import org.opentripplanner.routing.api.request.preference.StreetPreferences;
 import org.opentripplanner.routing.api.request.preference.SystemPreferences;
+import org.opentripplanner.routing.api.request.preference.TirStopSafetyPreferences;
 import org.opentripplanner.routing.api.request.preference.TransitPreferences;
 import org.opentripplanner.routing.api.request.preference.WalkPreferences;
 import org.opentripplanner.routing.api.request.request.TransitRequest;
@@ -342,6 +346,86 @@ public class RouteRequestConfig {
     }
 
     builder.withDirectTransitPreferences(it -> DirectTransitRequestConfig.map(c, it));
+    builder.withStopSafety(it -> mapStopSafetyPreferences(c, it));
+  }
+
+  private static void mapStopSafetyPreferences(
+    NodeAdapter root,
+    TirStopSafetyPreferences.Builder builder
+  ) {
+    var dft = builder.original();
+    var c = root
+      .of("stopSafety")
+      .since(V2_11)
+      .summary("Extra costs for boarding at stops which are unlit or do not have a shelter.")
+      .description(
+        """
+        The costs are added to the generalized-cost every time a transit vehicle is boarded at a
+        stop lacking the given feature. The `unlitCost` is only added when the vehicle is boarded
+        at night (between `nightStart` and `nightEnd`), while the `unshelteredCost` is added at any
+        time of the day. If both apply, both costs are added. The lighting and shelter information
+        is read from the `lit_at_night` and `shelter` columns in the GTFS `stops.txt` file. A stop
+        is considered unlit/unsheltered unless the value is `1`.
+        """
+      )
+      .asObject();
+
+    builder
+      .withUnlitCost(
+        c
+          .of("unlitCost")
+          .since(V2_11)
+          .summary("The cost to add when boarding, at night, at a stop which is not lit.")
+          .asInt(dft.unlitCost().toSeconds())
+      )
+      .withNightStart(
+        parseTimeOfDay(
+          c
+            .of("nightStart")
+            .since(V2_11)
+            .summary("The local time of day the night starts, used with the `unlitCost`.")
+            .description(
+              """
+              The format is `HH:mm`. The night may span midnight. If `nightStart` and `nightEnd`
+              are the same, the `unlitCost` is added at any time of the day.
+              """
+            )
+            .asString(dft.nightStart().toString()),
+          "nightStart"
+        )
+      )
+      .withNightEnd(
+        parseTimeOfDay(
+          c
+            .of("nightEnd")
+            .since(V2_11)
+            .summary("The local time of day the night ends, used with the `unlitCost`.")
+            .description("The format is `HH:mm`. See `nightStart`.")
+            .asString(dft.nightEnd().toString()),
+          "nightEnd"
+        )
+      )
+      .withUnshelteredCost(
+        c
+          .of("unshelteredCost")
+          .since(V2_11)
+          .summary("The cost to add when boarding at a stop which does not have a shelter.")
+          .asInt(dft.unshelteredCost().toSeconds())
+      );
+  }
+
+  private static LocalTime parseTimeOfDay(String value, String parameterName) {
+    try {
+      return LocalTime.parse(value);
+    } catch (DateTimeParseException e) {
+      throw new IllegalArgumentException(
+        "The stopSafety.%s '%s' is not a valid time of day, expected format is HH:mm.".formatted(
+          parameterName,
+          value
+        ),
+        e
+      );
+    }
   }
 
   private static void mapBikePreferences(NodeAdapter root, BikePreferences.Builder builder) {

@@ -112,7 +112,9 @@ public class RaptorRoutingRequestTransitData implements RaptorTransitDataProvide
 
     this.generalizedCostCalculator = CostCalculatorFactory.createCostCalculator(
       mcCostParams,
-      raptorTransitData.getStopBoardAlightTransferCosts()
+      raptorTransitData.getStopBoardAlightTransferCosts(),
+      raptorTransitData.getStopCount(),
+      raptorTransitData::getStopByIndex
     );
 
     this.slackProvider = new DefaultSlackProvider(

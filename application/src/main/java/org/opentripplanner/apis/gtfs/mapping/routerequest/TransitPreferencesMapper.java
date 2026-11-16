@@ -68,6 +68,14 @@ public class TransitPreferencesMapper {
           (int) DurationUtils.requireNonNegativeMax2hours(slack, "board slack").toSeconds()
         );
       }
+      var unlitStopCost = board.getGraphQLUnlitStopCost();
+      if (unlitStopCost != null) {
+        transitPreferences.withStopSafety(it -> it.withUnlitCost(unlitStopCost));
+      }
+      var unshelteredStopCost = board.getGraphQLUnshelteredStopCost();
+      if (unshelteredStopCost != null) {
+        transitPreferences.withStopSafety(it -> it.withUnshelteredCost(unshelteredStopCost));
+      }
       var waitReluctance = board.getGraphQLWaitReluctance();
       if (waitReluctance != null) {
         transferPreferences.withWaitReluctance(waitReluctance);

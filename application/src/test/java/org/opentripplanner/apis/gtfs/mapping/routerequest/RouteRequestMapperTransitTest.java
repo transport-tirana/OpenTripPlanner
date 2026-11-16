@@ -43,6 +43,35 @@ class RouteRequestMapperTransitTest {
   }
 
   @Test
+  void testStopSafetyBoardPreferences() {
+    var args = testCtx.basicRequest();
+    var unlitStopCost = Cost.costOfSeconds(300);
+    var unshelteredStopCost = Cost.costOfSeconds(120);
+    args.put(
+      "preferences",
+      Map.ofEntries(
+        entry(
+          "transit",
+          Map.ofEntries(
+            entry(
+              "board",
+              Map.ofEntries(
+                entry("unlitStopCost", unlitStopCost),
+                entry("unshelteredStopCost", unshelteredStopCost)
+              )
+            )
+          )
+        )
+      )
+    );
+    var env = testCtx.executionContext(args);
+    var routeRequest = RouteRequestMapper.toRouteRequest(env, testCtx.context());
+    var stopSafety = routeRequest.preferences().transit().stopSafety();
+    assertEquals(unlitStopCost, stopSafety.unlitCost());
+    assertEquals(unshelteredStopCost, stopSafety.unshelteredCost());
+  }
+
+  @Test
   void testAlightPreferences() {
     var args = testCtx.basicRequest();
     var slack = Duration.ofSeconds(125);

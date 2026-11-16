@@ -617,11 +617,17 @@ public class GraphQLTypes {
   public static class GraphQLBoardPreferencesInput {
 
     private java.time.Duration slack;
+    private org.opentripplanner.core.model.basic.Cost unlitStopCost;
+    private org.opentripplanner.core.model.basic.Cost unshelteredStopCost;
     private Double waitReluctance;
 
     public GraphQLBoardPreferencesInput(Map<String, Object> args) {
       if (args != null) {
         this.slack = (java.time.Duration) args.get("slack");
+        this.unlitStopCost = (org.opentripplanner.core.model.basic.Cost) args.get("unlitStopCost");
+        this.unshelteredStopCost = (org.opentripplanner.core.model.basic.Cost) args.get(
+          "unshelteredStopCost"
+        );
         this.waitReluctance = (Double) args.get("waitReluctance");
       }
     }
@@ -630,12 +636,30 @@ public class GraphQLTypes {
       return this.slack;
     }
 
+    public org.opentripplanner.core.model.basic.Cost getGraphQLUnlitStopCost() {
+      return this.unlitStopCost;
+    }
+
+    public org.opentripplanner.core.model.basic.Cost getGraphQLUnshelteredStopCost() {
+      return this.unshelteredStopCost;
+    }
+
     public Double getGraphQLWaitReluctance() {
       return this.waitReluctance;
     }
 
     public void setGraphQLSlack(java.time.Duration slack) {
       this.slack = slack;
+    }
+
+    public void setGraphQLUnlitStopCost(org.opentripplanner.core.model.basic.Cost unlitStopCost) {
+      this.unlitStopCost = unlitStopCost;
+    }
+
+    public void setGraphQLUnshelteredStopCost(
+      org.opentripplanner.core.model.basic.Cost unshelteredStopCost
+    ) {
+      this.unshelteredStopCost = unshelteredStopCost;
     }
 
     public void setGraphQLWaitReluctance(Double waitReluctance) {

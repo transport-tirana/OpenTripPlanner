@@ -43,7 +43,7 @@ public class GeneralizedCostParameters {
     this.waitReluctanceFactor = 1.0;
     this.wheelchairEnabled = false;
     this.wheelchairAccessibility = AccessibilityPreferences.ofOnlyAccessible();
-    this.stopSafetyPreferences = TirStopSafetyPreferences.ofOnlyAccessible();
+    this.stopSafetyPreferences = TirStopSafetyPreferences.DEFAULT;
     this.unpreferredPatterns = new BitSet();
     this.unpreferredCost = UNPREFERRED_COST;
   }
@@ -55,7 +55,7 @@ public class GeneralizedCostParameters {
     this.waitReluctanceFactor = builder.waitReluctanceFactor();
     this.wheelchairEnabled = builder.wheelchairEnabled();
     this.wheelchairAccessibility = builder.wheelchairAccessibility();
-    this.stopSafetyPreferences = builder.stopSafetyPreferences();
+    this.stopSafetyPreferences = Objects.requireNonNull(builder.stopSafetyPreferences());
     this.unpreferredPatterns = Objects.requireNonNull(builder.unpreferredPatterns());
     this.unpreferredCost = Objects.requireNonNull(builder.unpreferredCost());
   }
@@ -98,6 +98,7 @@ public class GeneralizedCostParameters {
     return wheelchairAccessibility;
   }
 
+  /** TIR: The extra costs for boarding at a stop which is unlit or does not have a shelter. */
   public TirStopSafetyPreferences stopSafetyPreferences() {
     return stopSafetyPreferences;
   }

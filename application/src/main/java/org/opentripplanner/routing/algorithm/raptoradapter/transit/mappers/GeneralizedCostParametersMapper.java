@@ -42,6 +42,7 @@ public class GeneralizedCostParametersMapper {
     );
     builder.wheelchairEnabled(request.journey().wheelchair());
     builder.wheelchairAccessibility(preferences.wheelchair().trip());
+    builder.stopSafetyPreferences(preferences.transit().stopSafety());
 
     final Set<FeedScopedId> unpreferredRoutes = Set.copyOf(
       request.journey().transit().unpreferredRoutes()

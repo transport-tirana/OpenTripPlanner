@@ -33,6 +33,7 @@ public final class TransitPreferences implements Serializable {
   private final boolean includeRealtimeCancellations;
   private final RaptorPreferences raptor;
   private final DirectTransitPreferences directTransitPreferences;
+  private final TirStopSafetyPreferences stopSafety;
 
   private TransitPreferences() {
     this.boardSlack = this.alightSlack = DurationForEnum.of(TransitMode.class).build();
@@ -45,6 +46,7 @@ public final class TransitPreferences implements Serializable {
     this.includeRealtimeCancellations = false;
     this.raptor = RaptorPreferences.DEFAULT;
     this.directTransitPreferences = DirectTransitPreferences.DEFAULT;
+    this.stopSafety = TirStopSafetyPreferences.DEFAULT;
   }
 
   private TransitPreferences(Builder builder) {
@@ -59,6 +61,7 @@ public final class TransitPreferences implements Serializable {
     this.includeRealtimeCancellations = builder.includeRealtimeCancellations;
     this.raptor = requireNonNull(builder.raptor);
     this.directTransitPreferences = requireNonNull(builder.directTransitPreferences);
+    this.stopSafety = requireNonNull(builder.stopSafety);
   }
 
   public static Builder of() {
@@ -178,6 +181,14 @@ public final class TransitPreferences implements Serializable {
       : Optional.empty();
   }
 
+  /**
+   * TIR: The extra costs for boarding at a stop which is not lit at night or does not have a
+   * shelter. The default is no extra cost.
+   */
+  public TirStopSafetyPreferences stopSafety() {
+    return stopSafety;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -198,7 +209,8 @@ public final class TransitPreferences implements Serializable {
       includePlannedCancellations == that.includePlannedCancellations &&
       includeRealtimeCancellations == that.includeRealtimeCancellations &&
       raptor.equals(that.raptor) &&
-      directTransitPreferences.equals(that.directTransitPreferences)
+      directTransitPreferences.equals(that.directTransitPreferences) &&
+      stopSafety.equals(that.stopSafety)
     );
   }
 
@@ -215,7 +227,8 @@ public final class TransitPreferences implements Serializable {
       includePlannedCancellations,
       includeRealtimeCancellations,
       raptor,
-      directTransitPreferences
+      directTransitPreferences,
+      stopSafety
     );
   }
 
@@ -250,6 +263,7 @@ public final class TransitPreferences implements Serializable {
         directTransitPreferences,
         DEFAULT.directTransitPreferences
       )
+      .addObj("stopSafety", stopSafety, DEFAULT.stopSafety)
       .toString();
   }
 
@@ -269,6 +283,7 @@ public final class TransitPreferences implements Serializable {
     private boolean includeRealtimeCancellations;
     private RaptorPreferences raptor;
     private DirectTransitPreferences directTransitPreferences;
+    private TirStopSafetyPreferences stopSafety;
 
     public Builder(TransitPreferences original) {
       this.original = original;
@@ -283,6 +298,7 @@ public final class TransitPreferences implements Serializable {
       this.includeRealtimeCancellations = original.includeRealtimeCancellations;
       this.raptor = original.raptor;
       this.directTransitPreferences = original.directTransitPreferences;
+      this.stopSafety = original.stopSafety;
     }
 
     public TransitPreferences original() {
@@ -356,6 +372,11 @@ public final class TransitPreferences implements Serializable {
       var builder = directTransitPreferences.copyOf();
       body.accept(builder);
       this.directTransitPreferences = builder.build();
+      return this;
+    }
+
+    public Builder withStopSafety(Consumer<TirStopSafetyPreferences.Builder> body) {
+      this.stopSafety = stopSafety.copyOf().apply(body).build();
       return this;
     }
 

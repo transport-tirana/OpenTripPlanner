@@ -154,6 +154,7 @@ The RouteRequest is the type for the
 |       flatness                                                                                               |        `double`        | Relative importance of flat terrain (range 0.0, 1.0).                                                                                                    | *Optional* | `0.0`            |  2.0  |
 |       [safety](#rd_scooter_triangle_safety)                                                                  |        `double`        | Relative importance of safety (range 0.0, 1.0).                                                                                                          | *Optional* | `0.0`            |  2.0  |
 |       time                                                                                                   |        `double`        | Relative importance of duration of travel (range 0.0, 1.0).                                                                                              | *Optional* | `0.0`            |  2.0  |
+| [stopSafety](#rd_stopSafety)                                                                                 |        `object`        | Extra costs for boarding at stops which are unlit or do not have a shelter.                                                                              | *Optional* |                  |  2.11 |
 | [transferOptimization](#rd_transferOptimization)                                                             |        `object`        | Optimize where a transfer between to trip happens.                                                                                                       | *Optional* |                  |  2.1  |
 |    [backTravelWaitTimeFactor](#rd_to_backTravelWaitTimeFactor)                                               |        `double`        | To reduce back-travel we favor waiting, this reduces the cost of waiting.                                                                                | *Optional* | `1.0`            |  2.1  |
 |    [extraStopBoardAlightCostsFactor](#rd_to_extraStopBoardAlightCostsFactor)                                 |        `double`        | Add an extra board- and alight-cost for prioritized stops.                                                                                               | *Optional* | `0.0`            |  2.1  |
@@ -1095,6 +1096,21 @@ The safety value is set for tags in OpenStreetMap by the [OSM Tag Mapper](osm/Os
 which is mainly determined by the amount of traffic, but can also include other
 concerns such as convenience and general cyclist preferences by taking into account road
 surface etc.
+
+
+<h3 id="rd_stopSafety">stopSafety</h3>
+
+**Since version:** `2.11` ∙ **Type:** `object` ∙ **Cardinality:** `Optional`   
+**Path:** /routingDefaults 
+
+Extra costs for boarding at stops which are unlit or do not have a shelter.
+
+The costs are added to the generalized-cost every time a transit vehicle is boarded at a
+stop lacking the given feature. The `unlitCost` is only added when the vehicle is boarded
+at night (between `nightStart` and `nightEnd`), while the `unshelteredCost` is added at any
+time of the day. If both apply, both costs are added. The lighting and shelter information
+is read from the `lit_at_night` and `shelter` columns in the GTFS `stops.txt` file. A stop
+is considered unlit/unsheltered unless the value is `1`.
 
 
 <h3 id="rd_transferOptimization">transferOptimization</h3>

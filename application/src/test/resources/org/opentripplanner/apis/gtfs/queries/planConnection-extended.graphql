@@ -78,7 +78,12 @@
         walk: { speed: 2.4, reluctance: 1.5, safetyFactor: 0.5, boardCost: 200 }
       }
       transit: {
-        board: { waitReluctance: 3.2, slack: "PT1M30S" }
+        board: {
+          waitReluctance: 3.2
+          slack: "PT1M30S"
+          unlitStopCost: 300
+          unshelteredStopCost: 120
+        }
         alight: { slack: "PT0S" }
         transfer: {
           cost: 200

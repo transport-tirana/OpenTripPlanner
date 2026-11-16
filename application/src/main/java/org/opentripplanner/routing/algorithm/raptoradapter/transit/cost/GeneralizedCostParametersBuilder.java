@@ -95,7 +95,9 @@ public class GeneralizedCostParametersBuilder {
     return stopSafetyPreferences;
   }
 
-  public GeneralizedCostParametersBuilder stopSafetyPreferences(TirStopSafetyPreferences stopSafetyPreferences) {
+  public GeneralizedCostParametersBuilder stopSafetyPreferences(
+    TirStopSafetyPreferences stopSafetyPreferences
+  ) {
     this.stopSafetyPreferences = stopSafetyPreferences;
     return this;
   }

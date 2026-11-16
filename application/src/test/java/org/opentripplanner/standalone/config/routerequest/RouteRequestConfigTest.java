@@ -2,16 +2,69 @@ package org.opentripplanner.standalone.config.routerequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opentripplanner.standalone.config.framework.json.JsonSupport.newNodeAdapterForTest;
 
 import java.time.Duration;
+import java.time.LocalTime;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.opentripplanner.street.model.StreetMode;
 
 class RouteRequestConfigTest {
+
+  @Test
+  void testStopSafety() {
+    var nodeAdapter = newNodeAdapterForTest(
+      """
+      {
+        "stopSafety": {
+          "unlitCost": 300,
+          "unshelteredCost": 120,
+          "nightStart": "21:30",
+          "nightEnd": "05:00"
+        }
+      }
+      """
+    );
+
+    var subject = RouteRequestConfig.mapRouteRequest(nodeAdapter);
+
+    var stopSafety = subject.preferences().transit().stopSafety();
+    assertEquals(300, stopSafety.unlitCost().toSeconds());
+    assertEquals(120, stopSafety.unshelteredCost().toSeconds());
+    assertEquals(LocalTime.of(21, 30), stopSafety.nightStart());
+    assertEquals(LocalTime.of(5, 0), stopSafety.nightEnd());
+  }
+
+  @Test
+  void testStopSafetyWithInvalidNight() {
+    var nodeAdapter = newNodeAdapterForTest(
+      """
+      { "stopSafety": { "nightStart": "9pm" } }
+      """
+    );
+
+    var ex = assertThrows(IllegalArgumentException.class, () ->
+      RouteRequestConfig.mapRouteRequest(nodeAdapter)
+    );
+    assertEquals(
+      "The stopSafety.nightStart '9pm' is not a valid time of day, expected format is HH:mm.",
+      ex.getMessage()
+    );
+  }
+
+  @Test
+  void testStopSafetyIsOffByDefault() {
+    var subject = RouteRequestConfig.mapRouteRequest(newNodeAdapterForTest("{}"));
+
+    var stopSafety = subject.preferences().transit().stopSafety();
+    assertFalse(stopSafety.isEnabled());
+    assertEquals(LocalTime.of(20, 0), stopSafety.nightStart());
+    assertEquals(LocalTime.of(6, 0), stopSafety.nightEnd());
+  }
 
   @Test
   public void testWheelchairAccessibility() {

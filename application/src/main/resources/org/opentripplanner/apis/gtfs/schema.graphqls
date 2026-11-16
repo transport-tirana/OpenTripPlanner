@@ -4650,6 +4650,17 @@ input BoardPreferencesInput {
   stop later than expected.
   """
   slack: Duration
+  """
+  A cost that is added each time a transit vehicle is boarded, at night, at a stop which is not lit.
+  What is considered to be night is configured on the server. The cost is added in addition to
+  `unshelteredStopCost` if the stop also lacks a shelter.
+  """
+  unlitStopCost: Cost
+  """
+  A cost that is added each time a transit vehicle is boarded at a stop which does not have a shelter.
+  The cost is added at any time of the day, and in addition to `unlitStopCost` if that applies.
+  """
+  unshelteredStopCost: Cost
   "A multiplier for how bad waiting at a stop is compared to being in transit for equal lengths of time."
   waitReluctance: Reluctance
 }

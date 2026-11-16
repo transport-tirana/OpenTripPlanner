@@ -1,96 +1,103 @@
 package org.opentripplanner.routing.api.request.preference;
 
+import java.io.Serializable;
+import java.time.LocalTime;
+import java.util.Objects;
+import java.util.function.Consumer;
 import org.opentripplanner.core.model.basic.Cost;
 import org.opentripplanner.utils.tostring.ToStringBuilder;
 
-import java.util.Objects;
-import java.util.function.Consumer;
-
 /**
- * Preferences for how to treat trips or stops with accessibility restrictions, like wheelchair
- * accessibility.
+ * TIR: Preferences for how to treat boarding at stops that a passenger may perceive as unsafe or
+ * uncomfortable to wait at: stops which are not lit at night and stops without a shelter.
+ * <p>
+ * Each cost is added once every time a transit vehicle is boarded at a stop lacking the given
+ * feature. The unlit cost is only added when the vehicle is boarded at night, see
+ * {@link #nightStart()} and {@link #nightEnd()}, while the unsheltered cost is added at any time
+ * of the day. If both apply, both costs are added. The default is zero for both costs, which turns
+ * the feature off.
  * <p>
  * THIS CLASS IS IMMUTABLE AND THREAD-SAFE.
  */
-public final class TirStopSafetyPreferences {
+public final class TirStopSafetyPreferences implements Serializable {
 
-  /**
-   * Set the unknown cost to a very high number, so in case it is used accidentally it will not
-   * cause any harm.
-   */
-  private static final Cost NOT_SET = Cost.costOfSeconds(9_999_999);
-
-  private static final TirStopSafetyPreferences DEFAULT_UNSET = new TirStopSafetyPreferences(
-    false,
-    NOT_SET,
-    NOT_SET
+  public static final TirStopSafetyPreferences DEFAULT = new TirStopSafetyPreferences(
+    Cost.ZERO,
+    Cost.ZERO,
+    LocalTime.of(20, 0),
+    LocalTime.of(6, 0)
   );
-  private static final TirStopSafetyPreferences ONLY_CONSIDER_ACCESSIBLE =
-    new TirStopSafetyPreferences(true, NOT_SET, NOT_SET);
 
-  private final boolean onlyConsiderAccessible;
-  private final Cost unknownCost;
-  private final Cost inaccessibleCost;
+  private final Cost unlitCost;
+  private final Cost unshelteredCost;
+  private final LocalTime nightStart;
+  private final LocalTime nightEnd;
 
   private TirStopSafetyPreferences(
-    boolean onlyConsiderAccessible,
-    Cost unknownCost,
-    Cost inaccessibleCost
+    Cost unlitCost,
+    Cost unshelteredCost,
+    LocalTime nightStart,
+    LocalTime nightEnd
   ) {
-    this.onlyConsiderAccessible = onlyConsiderAccessible;
-    this.unknownCost = unknownCost;
-    this.inaccessibleCost = inaccessibleCost;
+    this.unlitCost = requireNotNegative(unlitCost, "unlitCost");
+    this.unshelteredCost = requireNotNegative(unshelteredCost, "unshelteredCost");
+    this.nightStart = Objects.requireNonNull(nightStart, "nightStart");
+    this.nightEnd = Objects.requireNonNull(nightEnd, "nightEnd");
   }
 
   /**
-   * Create a feature which only considers wheelchair-accessible trips/stops.
+   * Create preferences with the given costs in seconds, see {@link #unlitCost()} and
+   * {@link #unshelteredCost()}.
    */
-  public static TirStopSafetyPreferences ofOnlyAccessible() {
-    return ONLY_CONSIDER_ACCESSIBLE;
-  }
-
-  /**
-   * Create a feature which considers trips/stops that don't have an accessibility of POSSIBLE.
-   */
-  public static TirStopSafetyPreferences ofCost(int unknownCost, int inaccessibleCost) {
-    return new TirStopSafetyPreferences(
-      false,
-      Cost.costOfSeconds(unknownCost),
-      Cost.costOfSeconds(inaccessibleCost)
-    );
+  public static TirStopSafetyPreferences ofCost(int unlitCost, int unshelteredCost) {
+    return of().withUnlitCost(unlitCost).withUnshelteredCost(unshelteredCost).build();
   }
 
   public static Builder of() {
-    return DEFAULT_UNSET.copyOf();
+    return DEFAULT.copyOf();
   }
 
   public Builder copyOf() {
-    return new Builder(this, this);
-  }
-
-  public Builder copyOfWithDefaultCosts(TirStopSafetyPreferences defaultCosts) {
-    return new Builder(this, defaultCosts);
+    return new Builder(this);
   }
 
   /**
-   * Whether to include trips or stops which don't have a wheelchair accessibility of POSSIBLE
+   * The extra cost to add when boarding at a stop which is not lit at night. The cost is only
+   * added if the vehicle is boarded at night.
    */
-  public boolean onlyConsiderAccessible() {
-    return onlyConsiderAccessible;
+  public Cost unlitCost() {
+    return unlitCost;
   }
 
   /**
-   * The extra cost to add when using a trip/stop which has an accessibility of UNKNOWN.
+   * The extra cost to add when boarding at a stop which does not have a shelter.
    */
-  public int unknownCost() {
-    return unknownCost.toSeconds();
+  public Cost unshelteredCost() {
+    return unshelteredCost;
   }
 
   /**
-   * The extra cost to add when using a trip/stop which has an accessibility of NOT_POSSIBLE.
+   * The local time of day the night starts (inclusive). The night may span midnight, the default
+   * night is from 20:00 to 06:00. If the start and end are the same, the night lasts the entire
+   * day - the unlit cost is then added regardless of when the vehicle is boarded.
    */
-  public int inaccessibleCost() {
-    return inaccessibleCost.toSeconds();
+  public LocalTime nightStart() {
+    return nightStart;
+  }
+
+  /**
+   * The local time of day the night ends (exclusive), see {@link #nightStart()}.
+   */
+  public LocalTime nightEnd() {
+    return nightEnd;
+  }
+
+  /**
+   * Return {@code true} if at least one of the costs is set. If not, the stop safety does not
+   * influence the routing at all.
+   */
+  public boolean isEnabled() {
+    return !(unlitCost.isZero() && unshelteredCost.isZero());
   }
 
   @Override
@@ -103,80 +110,81 @@ public final class TirStopSafetyPreferences {
     }
     TirStopSafetyPreferences that = (TirStopSafetyPreferences) o;
     return (
-      onlyConsiderAccessible == that.onlyConsiderAccessible &&
-      Objects.equals(unknownCost, that.unknownCost) &&
-      Objects.equals(inaccessibleCost, that.inaccessibleCost)
+      Objects.equals(unlitCost, that.unlitCost) &&
+      Objects.equals(unshelteredCost, that.unshelteredCost) &&
+      Objects.equals(nightStart, that.nightStart) &&
+      Objects.equals(nightEnd, that.nightEnd)
     );
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(onlyConsiderAccessible, unknownCost, inaccessibleCost);
+    return Objects.hash(unlitCost, unshelteredCost, nightStart, nightEnd);
   }
 
   @Override
   public String toString() {
-    return toString(DEFAULT_UNSET);
+    return ToStringBuilder.of(TirStopSafetyPreferences.class)
+      .addObj("unlitCost", unlitCost, DEFAULT.unlitCost)
+      .addObj("unshelteredCost", unshelteredCost, DEFAULT.unshelteredCost)
+      .addObj("nightStart", nightStart, DEFAULT.nightStart)
+      .addObj("nightEnd", nightEnd, DEFAULT.nightEnd)
+      .toString();
   }
 
-  public String toString(TirStopSafetyPreferences defaultCosts) {
-    if (onlyConsiderAccessible) {
-      return "OnlyConsiderAccessible";
+  private static Cost requireNotNegative(Cost cost, String name) {
+    Objects.requireNonNull(cost, name);
+    if (cost.lessThan(Cost.ZERO)) {
+      throw new IllegalArgumentException("The " + name + " can not be negative: " + cost);
     }
-
-    return ToStringBuilder.of(TirStopSafetyPreferences.class)
-      .addObj("unknownCost", unknownCost, defaultCosts.unknownCost)
-      .addObj("inaccessibleCost", inaccessibleCost, defaultCosts.inaccessibleCost)
-      .toString();
+    return cost;
   }
 
   public static class Builder {
 
     private final TirStopSafetyPreferences original;
-    private boolean onlyConsiderAccessible;
-    private Cost unknownCost;
-    private Cost inaccessibleCost;
+    private Cost unlitCost;
+    private Cost unshelteredCost;
+    private LocalTime nightStart;
+    private LocalTime nightEnd;
 
-    private Builder(TirStopSafetyPreferences original, TirStopSafetyPreferences defaultCosts) {
+    private Builder(TirStopSafetyPreferences original) {
       this.original = original;
-
-      if (original.onlyConsiderAccessible) {
-        this.onlyConsiderAccessible = true;
-        this.unknownCost = defaultCosts.unknownCost;
-        this.inaccessibleCost = defaultCosts.inaccessibleCost;
-      } else {
-        this.onlyConsiderAccessible = false;
-        this.unknownCost = original.unknownCost;
-        this.inaccessibleCost = original.inaccessibleCost;
-      }
+      this.unlitCost = original.unlitCost;
+      this.unshelteredCost = original.unshelteredCost;
+      this.nightStart = original.nightStart;
+      this.nightEnd = original.nightEnd;
     }
 
-    public boolean onlyConsiderAccessible() {
-      return onlyConsiderAccessible;
+    public TirStopSafetyPreferences original() {
+      return original;
     }
 
-    public Builder withAccessibleOnly() {
-      this.onlyConsiderAccessible = true;
+    public Builder withUnlitCost(Cost unlitCost) {
+      this.unlitCost = unlitCost;
       return this;
     }
 
-    public int unknownCost() {
-      return unknownCost.toSeconds();
+    public Builder withUnlitCost(int unlitCost) {
+      return withUnlitCost(Cost.costOfSeconds(unlitCost));
     }
 
-    public Builder withUnknownCost(int unknownCost) {
-      this.onlyConsiderAccessible = false;
-      this.unknownCost = Cost.costOfSeconds(unknownCost);
+    public Builder withUnshelteredCost(Cost unshelteredCost) {
+      this.unshelteredCost = unshelteredCost;
       return this;
     }
 
-    public int inaccessibleCost() {
-      return inaccessibleCost.toSeconds();
+    public Builder withUnshelteredCost(int unshelteredCost) {
+      return withUnshelteredCost(Cost.costOfSeconds(unshelteredCost));
     }
 
-    public Builder withInaccessibleCost(int inaccessibleCost) {
-      this.onlyConsiderAccessible = false;
-      this.inaccessibleCost = Cost.costOfSeconds(inaccessibleCost);
+    public Builder withNightStart(LocalTime nightStart) {
+      this.nightStart = nightStart;
+      return this;
+    }
+
+    public Builder withNightEnd(LocalTime nightEnd) {
+      this.nightEnd = nightEnd;
       return this;
     }
 
@@ -186,9 +194,7 @@ public final class TirStopSafetyPreferences {
     }
 
     public TirStopSafetyPreferences build() {
-      var value = onlyConsiderAccessible
-        ? ofOnlyAccessible()
-        : ofCost(unknownCost.toSeconds(), inaccessibleCost.toSeconds());
+      var value = new TirStopSafetyPreferences(unlitCost, unshelteredCost, nightStart, nightEnd);
       return original.equals(value) ? original : value;
     }
   }

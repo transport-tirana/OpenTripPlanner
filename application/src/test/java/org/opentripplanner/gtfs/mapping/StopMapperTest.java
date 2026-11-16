@@ -171,6 +171,26 @@ public class StopMapperTest {
   }
 
   @Test
+  void testMapLitAtNightAndShelter() {
+    Stop input = createBasicStop();
+    input.setLitAtNight(1);
+    input.setShelter(1);
+
+    RegularStop result = subject.map(input);
+
+    assertEquals(1, result.getLitAtNight());
+    assertEquals(1, result.getShelter());
+  }
+
+  @Test
+  void testMapLitAtNightAndShelterDefaultsToZero() {
+    RegularStop result = subject.map(createBasicStop());
+
+    assertEquals(0, result.getLitAtNight());
+    assertEquals(0, result.getShelter());
+  }
+
+  @Test
   void testMapWithTimezone() {
     Stop input = createBasicStop();
     input.setTimezone(TIMEZONE);

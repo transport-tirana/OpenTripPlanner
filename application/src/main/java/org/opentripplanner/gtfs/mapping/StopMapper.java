@@ -57,6 +57,8 @@ class StopMapper {
       .withCoordinate(base.getCoordinate())
       .withWheelchairAccessibility(base.getWheelchairAccessibility())
       .withLevel(base.getLevel())
+      .withLitAtNight(gtfsStop.getLitAtNight())
+      .withShelter(gtfsStop.getShelter())
       .withPlatformCode(gtfsStop.getPlatformCode())
       .withVehicleType(mode)
       .withSometimesUsedRealtime(mapSometimesUsedRealtime(mode, gtfsStop));

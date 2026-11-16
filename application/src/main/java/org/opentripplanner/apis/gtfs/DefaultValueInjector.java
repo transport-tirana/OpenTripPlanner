@@ -307,6 +307,11 @@ public class DefaultValueInjector extends GraphQLTypeVisitorStub implements Grap
     builder
       .stringReq("AlightPreferencesInput.slack", transit.alightSlack().defaultValue())
       .stringReq("BoardPreferencesInput.slack", transit.boardSlack().defaultValue())
+      .intReq("BoardPreferencesInput.unlitStopCost", transit.stopSafety().unlitCost().toSeconds())
+      .intReq(
+        "BoardPreferencesInput.unshelteredStopCost",
+        transit.stopSafety().unshelteredCost().toSeconds()
+      )
       .boolReq("TimetablePreferencesInput.excludeRealTimeUpdates", transit.ignoreRealtimeUpdates())
       .boolReq(
         "TimetablePreferencesInput.includePlannedCancellations",
